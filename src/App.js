@@ -13,7 +13,6 @@ function App() {
   const [error, getError] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-
   function searching(e) {
     e.preventDefault();
     const form = e.target;
@@ -21,158 +20,88 @@ function App() {
     setKeyword(input);
     form.reset();
   }
-  async function initialFetch (keyworda, pagea) {
+  async function initialFetch(searchValue, pageNumber) {
     axios.defaults.baseURL = "https://pixabay.com/api/";
     const APIKEY = "23677449-ed03e132ebac9ff9282502f83";
-//nie wiedziałem jak użyć nazwy dlatego a na końcu
-    keyworda = keyword;
-    pagea = page;
+    searchValue = keyword;
+    pageNumber = page;
     try {
       const response = await axios.get(
-        `?key=${APIKEY}&q=${keyworda}&image_type=photo&orientation=horizontal&per_page=12&page=${pagea}`
+        `?key=${APIKEY}&q=${searchValue}&image_type=photo&orientation=horizontal&per_page=12&page=${pageNumber}`
       );
+      //zmienić page na pageNumber
       if (page === 1) {
-        
-          getImages(response.data.hits)
-          setTotalPages(response.data.totalHits)
-          setLoading(false)
-       
+        getImages(response.data.hits)
+        setTotalPages(response.data.totalHits)
+        setLoading(false)
       }
-      
       else {
-        getImages((prevState) => ({
+        getImages(prevState => ({
           ...prevState,
           ...response.data.hits
         }))
-        setTotalPages(response.data.totalHits)
+        setTotalPages(response.data.totalHits);
       }
-
-      // console.log(this.state);
     } catch (error) {
-     
       getError(error.message)
     } finally {
       setLoading(false)
     }
-  };
-  
-  function loadMore() {
-    setPage(page+1)
+  }
+   async function loadMore() {
+     setPage(2);
+     
     setTimeout(() => {
       window.scrollBy({
         top: 560,
         behavior: "smooth",
       });
     }, 300);
-  };
-  
-   useEffect(() => {
-     setLoading(true);
-     initialFetch();
-   })
- 
-  const prevStateKeyword = useRef();
-  const prevStatePage = useRef();
+  }
+  //componentDidMount
   useEffect(() => {
-    prevStateKeyword.current = keyword;
-    prevStatePage.current = page;
-    if (prevStatePage.current !== page) {
-      initialFetch()
+    setLoading(true);
+    initialFetch()
+    return function cleanup() {
+      setKeyword("");
+      setPage(1)
     }
-    if (prevStateKeyword.current !== keyword) {
-      setLoading(true);
-      getImages([]);
+  }, [])
+
+  //componentUpdate
+  const prevPageState = useRef();
+  const prevKeywordState = useRef();
+
+  useEffect(() => {
+    prevPageState.current = page;
+    prevKeywordState.current = keyword;
+    if (prevPageState !== page) {
       initialFetch();
     }
-  })
-
-  useEffect(() => {
-    setKeyword("");
-    setPage(1)
-  }, [])
+    if (prevKeywordState !== keyword) {
+      setLoading(true);
+      getImages([])
+    }
+  },[keyword,page])
   return (
-    <div>
-      <Searchbar searching={searching} />
+      <div>
+        <Searchbar searching={searching} />
 
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <ImageGallery items={images} />
-      )}
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <ImageGallery items={images} />
+        )}
 
-      {/* {images.length < totalPages && ( */}
-        <Button more={loadMore} />
-      
-      {/* )} */}
-    </div>
-  );
+        {images.length < totalPages && (
+          <Button more={loadMore} />
+        )}
+      </div>
+    );
+ 
 }
 
-// class App extends Component {
-//   state = {
-//     keyword: "",
-//     images: [],
-//     isLoading: false,
-//     error: "",
-//     page: 1,
-//     totalPages: 0,
-//   };
-//   searching = async (e) => {
-//     e.preventDefault();
-//     const form = e.target;
-//     const input = document.querySelector("input").value;
-//     // console.log(input);
-//     this.setState({ keyword: input });
-//     form.reset();
-//   };
-  // initialFetch = async (keyword, page) => {
-  //   axios.defaults.baseURL = "https://pixabay.com/api/";
-  //   const APIKEY = "23677449-ed03e132ebac9ff9282502f83";
 
-  //   keyword = this.state.keyword;
-  //   page = this.state.page;
-  //   try {
-  //     const response = await axios.get(
-  //       `?key=${APIKEY}&q=${keyword}&image_type=photo&orientation=horizontal&per_page=12&page=${page}`
-  //     );
-  //     if (page === 1) {
-  //       this.setState({
-  //         images: response.data.hits,
-  //         totalPages: response.data.totalHits,
-  //         isLoading: false,
-  //       });
-  //     }
-  //     // if(){}
-  //     else {
-  //       this.setState((prevState) => ({
-  //         images: [...prevState.images, ...response.data.hits],
-  //         totalPages: response.data.totalHits,
-  //       }));
-  //       // console.log(this.state);
-  //     }
-
-  //     // console.log(this.state);
-  //   } catch (error) {
-  //     this.setState({ error: error.message });
-  //   } finally {
-  //     this.setState({ isLoading: false });
-  //   }
-  // };
-//   loadMore = async () => {
-//     this.setState((prevState) => ({
-//       page: prevState.page + 1,
-//     }));
-//     setTimeout(() => {
-//       window.scrollBy({
-//         top: 560,
-//         behavior: "smooth",
-//       });
-//     }, 300);
-//   };
-//   async componentDidMount() {
-//     this.setState({ isLoading: true });
-//     this.initialFetch();
-//   }
 //   async componentDidUpdate(previousProps, prevState) {
 //     if (prevState.page !== this.state.page) {
 //       this.initialFetch();
