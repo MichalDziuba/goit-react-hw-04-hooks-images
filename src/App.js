@@ -2,13 +2,12 @@ import "./App.css";
 import { React, useState, useEffect, useRef } from "react";
 import Searchbar from "./Components/SearchBar/Searchbar";
 import ImageGallery from "./Components/imageGallery/ImageGallery";
-// import GalleryItem from "./Components/ImageGalleryItem/ImageGalleryItem";
 import axios from "axios";
 import Button from "./Components/LoadMoreBtn/LoadMoreBtn";
 import Loader from "./Components/Loader/Loader";
 export default function App() {
   const [keyword, setKeyword] = useState("");
-  const [images, getImages] = useState([]);
+  const [images, setImages] = useState([]);
   const [isLoading, setLoading] = useState(false);
   const [error, getError] = useState("");
   const [page, setPage] = useState(1);
@@ -30,12 +29,12 @@ export default function App() {
         `?key=${APIKEY}&q=${searchValue}&image_type=photo&orientation=horizontal&per_page=12&page=${pageNumber}`
       )
       if (page === 1) {
-        getImages(response.data.hits)
+        setImages(response.data.hits)
         setTotalPages(response.data.totalHits)
         setLoading(false)
       }
       else {
-        getImages((prevImages) => [...prevImages, ...response.data.hits]);
+        setImages((prevImages) => [...prevImages, ...response.data.hits]);
         setTotalPages(response.data.totalHits);
       }
     } catch (error) {
@@ -66,7 +65,7 @@ export default function App() {
     return function cleanup() {
       setKeyword("");
       setPage(1);
-      getImages([])
+      setImages([])
     }
   }, [])
 
@@ -74,7 +73,7 @@ export default function App() {
   useEffect(() => {
     if (prevKeyword !== keyword) {
       setLoading(true);
-      getImages([])
+      setImages([])
       setPage(1);
       
     } else {
