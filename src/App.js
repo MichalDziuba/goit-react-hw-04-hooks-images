@@ -1,12 +1,12 @@
 import "./App.css";
-import { React, Component, useState, useEffect, useRef } from "react";
+import { React, useState, useEffect, useRef } from "react";
 import Searchbar from "./Components/SearchBar/Searchbar";
 import ImageGallery from "./Components/imageGallery/ImageGallery";
 // import GalleryItem from "./Components/ImageGalleryItem/ImageGalleryItem";
 import axios from "axios";
 import Button from "./Components/LoadMoreBtn/LoadMoreBtn";
 import Loader from "./Components/Loader/Loader";
-function App() {
+export default function App() {
   const [keyword, setKeyword] = useState("");
   const [images, getImages] = useState([]);
   const [isLoading, setLoading] = useState(false);
@@ -28,18 +28,14 @@ function App() {
     try {
       const response = await axios.get(
         `?key=${APIKEY}&q=${searchValue}&image_type=photo&orientation=horizontal&per_page=12&page=${pageNumber}`
-      );
-      //zmienić page na pageNumber
+      )
       if (page === 1) {
         getImages(response.data.hits)
         setTotalPages(response.data.totalHits)
         setLoading(false)
       }
       else {
-        getImages(prevState => ({
-          ...prevState,
-          ...response.data.hits
-        }))
+        getImages((prevImages) => [...prevImages, ...response.data.hits]);
         setTotalPages(response.data.totalHits);
       }
     } catch (error) {
@@ -48,9 +44,8 @@ function App() {
       setLoading(false)
     }
   }
-   async function loadMore() {
-     setPage(2);
-     
+  function loadMore() {
+     setPage(page +1);
     setTimeout(() => {
       window.scrollBy({
         top: 560,
@@ -58,31 +53,34 @@ function App() {
       });
     }, 300);
   }
-  //componentDidMount
+  function usePrevious(value) {
+    const ref = useRef();
+    useEffect(() => {
+      ref.current = value;
+    }, [value])
+    return ref.current
+  }
   useEffect(() => {
     setLoading(true);
     initialFetch()
     return function cleanup() {
       setKeyword("");
-      setPage(1)
+      setPage(1);
+      getImages([])
     }
   }, [])
 
-  //componentUpdate
-  const prevPageState = useRef();
-  const prevKeywordState = useRef();
-
+  const prevKeyword=usePrevious(keyword)
   useEffect(() => {
-    prevPageState.current = page;
-    prevKeywordState.current = keyword;
-    if (prevPageState !== page) {
-      initialFetch();
-    }
-    if (prevKeywordState !== keyword) {
+    if (prevKeyword !== keyword) {
       setLoading(true);
       getImages([])
+      setPage(1);
+      
+    } else {
+      initialFetch()
     }
-  },[keyword,page])
+  },[keyword,page,prevKeyword])
   return (
       <div>
         <Searchbar searching={searching} />
@@ -98,46 +96,5 @@ function App() {
         )}
       </div>
     );
- 
+
 }
-
-
-//   async componentDidUpdate(previousProps, prevState) {
-//     if (prevState.page !== this.state.page) {
-//       this.initialFetch();
-//     }
-//     if (prevState.keyword !== this.state.keyword) {
-//       this.setState({
-//         isLoading: true,
-//         images: [],
-//       });
-//       this.initialFetch();
-//     }
-//   }
-//   componentWillUnmount() {
-//     this.setState({
-//       keyword: "",
-//       page: 1,
-//     });
-//   }
-
-//   render() {
-//     return (
-//       <div>
-//         <Searchbar searching={this.searching} />
-
-//         {this.state.isLoading ? (
-//           <Loader />
-//         ) : (
-//           <ImageGallery items={this.state.images} />
-//         )}
-
-//         {this.state.images.length < this.state.totalPages && (
-//           <Button more={this.loadMore} />
-//         )}
-//       </div>
-//     );
-//   }
-// }
-
-export default App;
